@@ -127,3 +127,26 @@ CREATE INDEX `idx_tracker_created` ON `tracker_logs` (`created_at`);
 CREATE INDEX `idx_tracker_ip` ON `tracker_logs` (`ip_address`);
 CREATE INDEX `idx_tracker_url` ON `tracker_logs` (`url_path`);
 CREATE INDEX `idx_tracker_country` ON `tracker_logs` (`country_code`);
+
+-- Alter admins table to support QR Login Token
+ALTER TABLE `admins` ADD COLUMN `qr_login_token` VARCHAR(255) NULL;
+
+-- API Mobile Tokens
+CREATE TABLE IF NOT EXISTS `api_tokens` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `admin_id` INT NOT NULL,
+    `token` VARCHAR(255) NOT NULL UNIQUE,
+    `expires_at` DATETIME NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Expo Push Tokens
+CREATE TABLE IF NOT EXISTS `push_tokens` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `admin_id` INT NOT NULL,
+    `expo_push_token` VARCHAR(255) NOT NULL UNIQUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

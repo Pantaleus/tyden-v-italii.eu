@@ -51,6 +51,25 @@ $router->post('/track-screen', [PublicController::class, 'trackScreen']);
 $router->get('/robots.txt', [PublicController::class, 'robots']);
 $router->get('/sitemap.xml', [PublicController::class, 'sitemap']);
 
+// API Endpoints for Mobile Application
+use App\Controllers\ApiController;
+$router->post('/api/login', [ApiController::class, 'login']);
+$router->post('/api/qr-login', [ApiController::class, 'qrLogin']);
+$router->get('/api/stats', [ApiController::class, 'stats']);
+$router->get('/api/trips', [ApiController::class, 'getTrips']);
+$router->post('/api/trips', [ApiController::class, 'createTrip']);
+$router->post('/api/trips/{id}', [ApiController::class, 'updateTrip']); // Use POST as fallback for PUT in React Native multipart forms
+$router->get('/api/posts', [ApiController::class, 'getPosts']);
+$router->post('/api/posts', [ApiController::class, 'createPost']);
+$router->post('/api/posts/{id}', [ApiController::class, 'createPost']); // Edit post
+$router->get('/api/comments', [ApiController::class, 'getComments']);
+$router->post('/api/comments/{id}/approve', [ApiController::class, 'approveComment']);
+$router->post('/api/comments/{id}/spam', [ApiController::class, 'spamComment']);
+$router->post('/api/comments/{id}/delete', [ApiController::class, 'deleteComment']);
+$router->post('/api/register-push', [ApiController::class, 'registerPushToken']);
+$router->post('/api/upload', [ApiController::class, 'upload']);
+
+
 // 404 handler
 $router->setNotFound(function(Request $req) {
     http_response_code(404);

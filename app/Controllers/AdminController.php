@@ -144,35 +144,51 @@ class AdminController extends Controller
         ], 'admin');
     }
 
-    /**
-     * Settings Panel
-     */
     public function settings(Request $request): void
     {
         $this->checkAuth();
 
+        $adminId = (int)$_SESSION['admin_id'];
         $alert = null;
+
+        // Fetch current admin
+        $admin = DB::fetch("SELECT * FROM `admins` WHERE `id` = ?", [$adminId]);
+
+        // Auto-generate QR token if missing
+        if ($admin && empty($admin['qr_login_token'])) {
+            $qrToken = bin2hex(random_bytes(16));
+            DB::query("UPDATE `admins` SET `qr_login_token` = ? WHERE `id` = ?", [$qrToken, $adminId]);
+            $admin['qr_login_token'] = $qrToken;
+        }
 
         if ($request->isPost()) {
             $params = $request->getParams();
             
-            // Save settings keys
-            Settings::set('active_theme', $params['active_theme'] ?? 'warm_mediterranean');
-            Settings::set('tinymce_api_key', $params['tinymce_api_key'] ?? 'no-api-key');
-            Settings::set('smtp_host', $params['smtp_host'] ?? 'localhost');
-            Settings::set('smtp_port', $params['smtp_port'] ?? '587');
-            Settings::set('smtp_user', $params['smtp_user'] ?? '');
-            Settings::set('smtp_pass', $params['smtp_pass'] ?? '');
-            Settings::set('smtp_from_email', $params['smtp_from_email'] ?? 'info@tyden-v-italii.eu');
-            Settings::set('smtp_from_name', $params['smtp_from_name'] ?? 'Týden v Itálii');
+            if (($params['action'] ?? '') === 'regenerate_qr') {
+                $qrToken = bin2hex(random_bytes(16));
+                DB::query("UPDATE `admins` SET `qr_login_token` = ? WHERE `id` = ?", [$qrToken, $adminId]);
+                $admin['qr_login_token'] = $qrToken;
+                $alert = ['type' => 'success', 'message' => 'Přihlašovací QR token byl úspěšně vygenerován znovu.'];
+            } else {
+                // Save settings keys
+                Settings::set('active_theme', $params['active_theme'] ?? 'warm_mediterranean');
+                Settings::set('tinymce_api_key', $params['tinymce_api_key'] ?? 'no-api-key');
+                Settings::set('smtp_host', $params['smtp_host'] ?? 'localhost');
+                Settings::set('smtp_port', $params['smtp_port'] ?? '587');
+                Settings::set('smtp_user', $params['smtp_user'] ?? '');
+                Settings::set('smtp_pass', $params['smtp_pass'] ?? '');
+                Settings::set('smtp_from_email', $params['smtp_from_email'] ?? 'info@tyden-v-italii.eu');
+                Settings::set('smtp_from_name', $params['smtp_from_name'] ?? 'Týden v Itálii');
 
-            $alert = ['type' => 'success', 'message' => 'Nastavení bylo úspěšně uloženo.'];
+                $alert = ['type' => 'success', 'message' => 'Nastavení bylo úspěšně uloženo.'];
+            }
         }
 
         $this->render('admin/settings', [
             'title' => 'Nastavení webu',
             'alert' => $alert,
             'settings' => Settings::getAll(),
+            'qrToken' => $admin['qr_login_token'] ?? '',
             'viewPath' => 'admin/settings'
         ], 'admin');
     }
