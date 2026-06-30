@@ -1,0 +1,20 @@
+{
+    "name": "pantaleus/tyden-v-italii",
+    "description": "Travel Blog & Diary about Italy built with custom OOP PHP 8.4",
+    "type": "project",
+    "require": {
+        "php": ">=8.4.0",
+        "phpmailer/phpmailer": "^6.9.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.4.19"
+        }
+    }
+}
