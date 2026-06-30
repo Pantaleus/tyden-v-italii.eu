@@ -67,6 +67,8 @@ $router->post('/api/comments/{id}/approve', [ApiController::class, 'approveComme
 $router->post('/api/comments/{id}/spam', [ApiController::class, 'spamComment']);
 $router->post('/api/comments/{id}/delete', [ApiController::class, 'deleteComment']);
 $router->post('/api/register-push', [ApiController::class, 'registerPushToken']);
+$router->get('/api/settings', [ApiController::class, 'getSettings']);
+$router->post('/api/settings', [ApiController::class, 'updateSettings']);
 $router->post('/api/upload', [ApiController::class, 'upload']);
 
 

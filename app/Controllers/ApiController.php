@@ -470,6 +470,32 @@ class ApiController extends Controller
         }
     }
 
+    /**
+     * GET /api/settings
+     */
+    public function getSettings(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $this->json(\App\Core\Settings::getAll());
+    }
+
+    /**
+     * POST /api/settings
+     */
+    public function updateSettings(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $params = $request->getParams();
+
+        foreach ($params as $key => $value) {
+            if (in_array($key, ['active_theme', 'tinymce_api_key', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'], true)) {
+                \App\Core\Settings::set($key, (string)$value);
+            }
+        }
+
+        $this->json(['status' => 'success']);
+    }
+
     private function slugify(string $text): string
     {
         $text = preg_replace('~[^\pL\d]+~u', '-', $text);
