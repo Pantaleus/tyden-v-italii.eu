@@ -11,7 +11,7 @@ abstract class Controller
     /**
      * Renders a view wrapped in a layout
      */
-    protected function render(string $viewPath, array $data = [], string $layout = 'public'): void
+    protected function render(string $__viewPath__, array $data = [], string $layout = 'public'): void
     {
         // Extract variables to be accessible directly in the view
         extract($data);
@@ -27,11 +27,11 @@ abstract class Controller
 
         // Start capturing view content
         ob_start();
-        $viewFullPath = __DIR__ . '/../Views/' . $viewPath . '.php';
+        $viewFullPath = __DIR__ . '/../Views/' . $__viewPath__ . '.php';
         if (file_exists($viewFullPath)) {
             require $viewFullPath;
         } else {
-            echo "View file not found: $viewPath";
+            echo "View file not found: $__viewPath__";
         }
         $content = ob_get_clean();
 
