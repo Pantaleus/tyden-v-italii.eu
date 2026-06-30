@@ -81,7 +81,7 @@ class Request
     }
 
     /**
-     * Recursive input sanitization to prevent XSS
+     * Recursive input sanitization (trimming whitespace)
      */
     private function sanitizeInput($input)
     {
@@ -89,8 +89,7 @@ class Request
             return array_map([$this, 'sanitizeInput'], $input);
         }
         if (is_string($input)) {
-            // Convert special characters to HTML entities, preserving UTF-8
-            return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+            return trim($input);
         }
         return $input;
     }
