@@ -59,6 +59,10 @@ $router->get('/api/stats', [ApiController::class, 'stats']);
 $router->get('/api/trips', [ApiController::class, 'getTrips']);
 $router->post('/api/trips', [ApiController::class, 'createTrip']);
 $router->post('/api/trips/{id}', [ApiController::class, 'updateTrip']); // Use POST as fallback for PUT in React Native multipart forms
+$router->post('/api/trips/{id}/timeline/reorder', [ApiController::class, 'reorderTimelineApi']);
+$router->post('/api/trips/{id}/timeline/{step_id}/delete', [ApiController::class, 'deleteTimelineStep']);
+$router->post('/api/trips/{id}/timeline/{step_id}', [ApiController::class, 'editTimelineStep']);
+$router->post('/api/trips/{id}/timeline', [ApiController::class, 'addTimelineStep']);
 $router->get('/api/posts', [ApiController::class, 'getPosts']);
 $router->post('/api/posts', [ApiController::class, 'createPost']);
 $router->post('/api/posts/{id}', [ApiController::class, 'createPost']); // Edit post

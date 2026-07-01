@@ -105,10 +105,11 @@
         </h3>
 
         <!-- Add Step Form -->
-        <form action="" method="POST" style="background-color: var(--bg-color); padding: 20px; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 30px;">
-            <input type="hidden" name="action" value="add_step">
+        <form id="timeline-step-form" action="" method="POST" style="background-color: var(--bg-color); padding: 20px; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 30px;">
+            <input type="hidden" name="action" id="step_action" value="add_step">
+            <input type="hidden" name="edit_step_id" id="edit_step_id" value="">
             
-            <h4 style="font-size: 15px; margin-bottom: 15px;"><i class="fa-solid fa-circle-plus"></i> Přidat nový krok časové osy</h4>
+            <h4 id="timeline-form-title" style="font-size: 15px; margin-bottom: 15px;"><i class="fa-solid fa-circle-plus"></i> Přidat nový krok časové osy</h4>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div class="form-group" style="margin-bottom: 0;">
@@ -143,29 +144,32 @@
             <!-- Translate Step Title and Details -->
             <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
                 <div class="form-group" style="margin-bottom: 8px;">
-                    <input type="text" name="step_title_cs" class="form-control" placeholder="Název kroku CZ (např. Let z Prahy)" style="padding: 8px;" required>
+                    <input type="text" name="step_title_cs" id="step_title_cs" class="form-control" placeholder="Název kroku CZ (např. Let z Prahy)" style="padding: 8px;" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <textarea name="step_text_cs" rows="2" class="form-control" placeholder="Podrobnosti CZ (např. Ryanair, letadlo letělo včas)" style="padding: 8px; font-size: 14px;"></textarea>
+                    <textarea name="step_text_cs" id="step_text_cs" rows="2" class="form-control" placeholder="Podrobnosti CZ (např. Ryanair, letadlo letělo včas)" style="padding: 8px; font-size: 14px;"></textarea>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 8px;">
-                    <input type="text" name="step_title_en" class="form-control" placeholder="Název kroku EN" style="padding: 8px;">
+                    <input type="text" name="step_title_en" id="step_title_en" class="form-control" placeholder="Název kroku EN" style="padding: 8px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <textarea name="step_text_en" rows="2" class="form-control" placeholder="Podrobnosti EN" style="padding: 8px; font-size: 14px;"></textarea>
+                    <textarea name="step_text_en" id="step_text_en" rows="2" class="form-control" placeholder="Podrobnosti EN" style="padding: 8px; font-size: 14px;"></textarea>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 8px;">
-                    <input type="text" name="step_title_it" class="form-control" placeholder="Název kroku IT" style="padding: 8px;">
+                    <input type="text" name="step_title_it" id="step_title_it" class="form-control" placeholder="Název kroku IT" style="padding: 8px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <textarea name="step_text_it" rows="2" class="form-control" placeholder="Podrobnosti IT" style="padding: 8px; font-size: 14px;"></textarea>
+                    <textarea name="step_text_it" id="step_text_it" rows="2" class="form-control" placeholder="Podrobnosti IT" style="padding: 8px; font-size: 14px;"></textarea>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-sm" style="width: 100%; justify-content: center;">
+            <button type="submit" id="timeline-submit-btn" class="btn btn-sm" style="width: 100%; justify-content: center;">
                 <i class="fa-solid fa-plus"></i> Přidat krok na časovou osu
+            </button>
+            <button type="button" id="cancel-edit-step-btn" class="btn btn-sm" style="display: none; width: 100%; justify-content: center; margin-top: 8px; background-color: #8c7a6b; color: #FFFFFF;" onclick="cancelEditStep()">
+                <i class="fa-solid fa-xmark"></i> Zrušit úpravu
             </button>
         </form>
 
@@ -178,12 +182,18 @@
             <div id="timeline-steps-list">
                 <?php foreach ($steps as $st): ?>
                     <div class="timeline-builder-item" draggable="true" data-id="<?= $st['id'] ?>" data-transport="<?= htmlspecialchars($st['transport_type']) ?>" style="cursor: grab; user-select: none;">
-                        <!-- Delete Step Button -->
-                        <form action="" method="POST" style="display: inline;" onsubmit="return confirm('Smazat tento krok?')">
-                            <input type="hidden" name="action" value="delete_step">
-                            <input type="hidden" name="step_id" value="<?= $st['id'] ?>">
-                            <button type="submit" class="remove-step-btn" title="Smazat"><i class="fa-regular fa-trash-can"></i></button>
-                        </form>
+                        <div style="float: right; display: flex; gap: 8px;">
+                            <!-- Edit Button -->
+                            <?php $stepJson = htmlspecialchars(json_encode($st), ENT_QUOTES, 'UTF-8'); ?>
+                            <button type="button" class="edit-step-btn" title="Upravit" data-step="<?= $stepJson ?>" onclick="startEditStep(this)" style="background: none; border: none; color: var(--primary-color); cursor: pointer; padding: 4px;"><i class="fa-regular fa-pen-to-square" style="font-size: 16px;"></i></button>
+
+                            <!-- Delete Step Button -->
+                            <form action="" method="POST" style="display: inline; margin: 0; padding: 0;" onsubmit="return confirm('Smazat tento krok?')">
+                                <input type="hidden" name="action" value="delete_step">
+                                <input type="hidden" name="step_id" value="<?= $st['id'] ?>">
+                                <button type="submit" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 4px;" title="Smazat"><i class="fa-regular fa-trash-can" style="font-size: 16px;"></i></button>
+                            </form>
+                        </div>
 
                         <div class="step-order-number" style="font-weight: 700; font-size: 14px; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-grip-vertical" style="color: var(--text-muted); cursor: grab; font-size: 16px;"></i>
@@ -227,6 +237,45 @@
 
         document.getElementById(tabId).classList.add('active');
         evt.currentTarget.classList.add('active');
+    }
+
+    function startEditStep(btn) {
+        const step = JSON.parse(btn.getAttribute('data-step'));
+        
+        document.getElementById('step_action').value = 'edit_step';
+        document.getElementById('edit_step_id').value = step.id;
+        document.getElementById('step_type').value = step.transport_type;
+        document.getElementById('step_order').value = step.step_order;
+        document.getElementById('step_dep').value = step.departure_time || '';
+        document.getElementById('step_arr').value = step.arrival_time || '';
+        
+        // Fill translations
+        document.getElementById('step_title_cs').value = step.trans?.cs?.title || '';
+        document.getElementById('step_text_cs').value = step.trans?.cs?.text || '';
+
+        document.getElementById('step_title_en').value = step.trans?.en?.title || '';
+        document.getElementById('step_text_en').value = step.trans?.en?.text || '';
+
+        document.getElementById('step_title_it').value = step.trans?.it?.title || '';
+        document.getElementById('step_text_it').value = step.trans?.it?.text || '';
+
+        // UI Updates
+        document.getElementById('timeline-form-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Upravit krok časové osy';
+        document.getElementById('timeline-submit-btn').innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Uložit změny kroku';
+        document.getElementById('cancel-edit-step-btn').style.display = 'flex';
+
+        // Scroll to form
+        document.getElementById('timeline-step-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEditStep() {
+        document.getElementById('timeline-step-form').reset();
+        document.getElementById('step_action').value = 'add_step';
+        document.getElementById('edit_step_id').value = '';
+        
+        document.getElementById('timeline-form-title').innerHTML = '<i class="fa-solid fa-circle-plus"></i> Přidat nový krok časové osy';
+        document.getElementById('timeline-submit-btn').innerHTML = '<i class="fa-solid fa-plus"></i> Přidat krok na časovou osu';
+        document.getElementById('cancel-edit-step-btn').style.display = 'none';
     }
 
     document.addEventListener('DOMContentLoaded', () => {

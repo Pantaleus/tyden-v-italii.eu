@@ -274,6 +274,115 @@ class ApiController extends Controller
     }
 
     /**
+     * POST /api/trips/{id}/timeline
+     */
+    public function addTimelineStep(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $tripId = (int)$request->getRouteParam('id');
+        $params = $request->getParams();
+
+        $type = $params['step_type'] ?? 'walk';
+        $dep = $params['step_dep'] ?? null;
+        $arr = $params['step_arr'] ?? null;
+        $order = (int)($params['step_order'] ?? 0);
+
+        DB::query(
+            "INSERT INTO `timeline_steps` (`trip_id`, `step_order`, `transport_type`, `departure_time`, `arrival_time`) VALUES (?, ?, ?, ?, ?)",
+            [$tripId, $order, $type, $dep, $arr]
+        );
+        $stepId = (int)DB::lastInsertId();
+
+        $langs = ['cs', 'en', 'it'];
+        foreach ($langs as $lang) {
+            $title = trim($params["step_title_$lang"] ?? '');
+            $text = trim($params["step_text_$lang"] ?? '');
+
+            DB::query(
+                "INSERT INTO `timeline_step_translations` (`step_id`, `lang`, `title`, `text`) VALUES (?, ?, ?, ?)",
+                [$stepId, $lang, $title, $text]
+            );
+        }
+
+        $this->json(['status' => 'success', 'step_id' => $stepId]);
+    }
+
+    /**
+     * POST /api/trips/{id}/timeline/{step_id}
+     */
+    public function editTimelineStep(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $tripId = (int)$request->getRouteParam('id');
+        $stepId = (int)$request->getRouteParam('step_id');
+        $params = $request->getParams();
+
+        $type = $params['step_type'] ?? 'walk';
+        $dep = $params['step_dep'] ?? null;
+        $arr = $params['step_arr'] ?? null;
+        $order = (int)($params['step_order'] ?? 0);
+
+        DB::query(
+            "UPDATE `timeline_steps` SET `step_order` = ?, `transport_type` = ?, `departure_time` = ?, `arrival_time` = ? WHERE `id` = ? AND `trip_id` = ?",
+            [$order, $type, $dep, $arr, $stepId, $tripId]
+        );
+
+        $langs = ['cs', 'en', 'it'];
+        foreach ($langs as $lang) {
+            $title = trim($params["step_title_$lang"] ?? '');
+            $text = trim($params["step_text_$lang"] ?? '');
+
+            DB::query(
+                "INSERT INTO `timeline_step_translations` (`step_id`, `lang`, `title`, `text`) 
+                 VALUES (?, ?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE `title` = ?, `text` = ?",
+                [$stepId, $lang, $title, $text, $title, $text]
+            );
+        }
+
+        $this->json(['status' => 'success']);
+    }
+
+    /**
+     * POST /api/trips/{id}/timeline/{step_id}/delete
+     */
+    public function deleteTimelineStep(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $tripId = (int)$request->getRouteParam('id');
+        $stepId = (int)$request->getRouteParam('step_id');
+
+        DB::query("DELETE FROM `timeline_steps` WHERE `id` = ? AND `trip_id` = ?", [$stepId, $tripId]);
+        $this->json(['status' => 'success']);
+    }
+
+    /**
+     * POST /api/trips/{id}/timeline/reorder
+     */
+    public function reorderTimelineApi(Request $request): void
+    {
+        $this->checkApiAuth($request);
+        $tripId = (int)$request->getRouteParam('id');
+        $params = $request->getParams();
+        $order = $params['order'] ?? [];
+
+        if (!is_array($order)) {
+            $this->json(['error' => 'Invalid order data'], 400);
+            return;
+        }
+
+        foreach ($order as $index => $stepId) {
+            $stepOrder = $index + 1;
+            DB::query(
+                "UPDATE `timeline_steps` SET `step_order` = ? WHERE `id` = ? AND `trip_id` = ?",
+                [$stepOrder, (int)$stepId, $tripId]
+            );
+        }
+
+        $this->json(['status' => 'success']);
+    }
+
+    /**
      * GET /api/posts
      * List all posts.
      */

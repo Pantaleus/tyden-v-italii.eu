@@ -339,6 +339,34 @@ class AdminController extends Controller
             $alert = ['type' => 'success', 'message' => 'Krok časové osy byl přidán.'];
         }
 
+        // Handle Timeline edit step
+        if ($request->isPost() && $request->getParam('action') === 'edit_step') {
+            $params = $request->getParams();
+            $stepId = (int)$params['edit_step_id'];
+            $type = $params['step_type'] ?? 'walk';
+            $dep = $params['step_dep'] ?? null;
+            $arr = $params['step_arr'] ?? null;
+            $order = (int)($params['step_order'] ?? 0);
+
+            DB::query(
+                "UPDATE `timeline_steps` SET `step_order` = ?, `transport_type` = ?, `departure_time` = ?, `arrival_time` = ? WHERE `id` = ? AND `trip_id` = ?",
+                [$order, $type, $dep, $arr, $stepId, $id]
+            );
+
+            foreach (SUPPORTED_LANGS as $lang) {
+                $title = trim($params["step_title_$lang"] ?? '');
+                $text = trim($params["step_text_$lang"] ?? '');
+
+                DB::query(
+                    "INSERT INTO `timeline_step_translations` (`step_id`, `lang`, `title`, `text`) 
+                     VALUES (?, ?, ?, ?) 
+                     ON DUPLICATE KEY UPDATE `title` = ?, `text` = ?",
+                    [$stepId, $lang, $title, $text, $title, $text]
+                );
+            }
+            $alert = ['type' => 'success', 'message' => 'Krok časové osy byl úspěšně upraven.'];
+        }
+
         // Handle Timeline delete step
         if ($request->isPost() && $request->getParam('action') === 'delete_step') {
             $stepId = (int)$request->getParam('step_id');
