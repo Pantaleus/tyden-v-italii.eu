@@ -41,6 +41,22 @@
                             <?php if ($admin['id'] !== $_SESSION['admin_id']): ?>
                                 <a href="?delete_id=<?= $admin['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Opravdu chcete tohoto administrátora smazat?')"><i class="fa-regular fa-trash-can"></i> Smazat</a>
                             <?php else: ?>
+                                <?php 
+                                $qrData = json_encode([
+                                    'url'   => BASE_URL,
+                                    'token' => $admin['qr_login_token']
+                                ]);
+                                $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($qrData);
+                                ?>
+                                <button type="button" class="btn btn-sm" onclick="showQrModal('<?= $qrUrl ?>')" style="background-color: #0F5132; color: #FFFFFF; margin-right: 8px;">
+                                    <i class="fa-solid fa-qrcode"></i> Zobrazit QR
+                                </button>
+                                <form action="" method="POST" style="display: inline; margin: 0; padding: 0;">
+                                    <input type="hidden" name="action" value="regenerate_qr">
+                                    <button type="submit" class="btn btn-sm" onclick="return confirm('Pozor, po přegenerování se budete muset v mobilní aplikaci přihlásit znovu. Pokračovat?')" style="background-color: #D97706; color: #FFFFFF; margin-right: 8px;">
+                                        <i class="fa-solid fa-rotate"></i> Nový QR
+                                    </button>
+                                </form>
                                 <span style="font-size: 13px; color: var(--text-muted); font-style: italic;">Nelze smazat</span>
                             <?php endif; ?>
                         </td>
@@ -74,3 +90,34 @@
         </form>
     </div>
 </div>
+
+<!-- Modal structure -->
+<div id="qrModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background-color: #FFFFFF; border: 1px solid var(--border-color); padding: 30px; border-radius: var(--border-radius); max-width: 400px; width: 100%; text-align: center; box-shadow: var(--box-shadow); position: relative; color: #112233;">
+        <button onclick="closeQrModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="font-size: 18px; margin-bottom: 15px;"><i class="fa-solid fa-mobile-screen-button"></i> Můj přihlašovací QR kód</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">Tento kód nikomu neukazujte ani neposílejte. Slouží výhradně pro přihlášení vašeho účtu do mobilní aplikace.</p>
+        <div id="qrCodeContainer" style="margin-bottom: 10px;">
+            <!-- QR code image will be set here -->
+        </div>
+    </div>
+</div>
+
+<script>
+function showQrModal(url) {
+    const modal = document.getElementById('qrModal');
+    const container = document.getElementById('qrCodeContainer');
+    container.innerHTML = `<img src="${url}" alt="QR Code" style="border: 4px solid #FFFFFF; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 0 auto; display: block;">`;
+    modal.style.display = 'flex';
+}
+function closeQrModal() {
+    document.getElementById('qrModal').style.display = 'none';
+}
+// Close on outside click
+window.onclick = function(event) {
+    const modal = document.getElementById('qrModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>

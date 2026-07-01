@@ -83,36 +83,5 @@
         </button>
     </form>
 
-    <h3 style="font-size: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-top: 40px; margin-bottom: 24px;">
-        <i class="fa-solid fa-mobile-screen-button"></i> Mobilní aplikace (Přihlašovací QR kód)
-    </h3>
-
-    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: center; background-color: var(--bg-color); padding: 24px; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 10px;">
-        <div style="text-align: center;">
-            <?php 
-            $qrData = json_encode([
-                'url'   => BASE_URL,
-                'token' => $qrToken
-            ]);
-            $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" . urlencode($qrData);
-            ?>
-            <img src="<?= $qrUrl ?>" alt="Přihlašovací QR kód" style="border: 4px solid #FFFFFF; border-radius: 4px; box-shadow: var(--box-shadow); display: block; margin: 0 auto;">
-        </div>
-        <div>
-            <p style="font-weight: 600; margin-bottom: 10px;">Pro rychlé přihlášení do mobilní aplikace:</p>
-            <ol style="margin-left: 20px; margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">
-                <li>Stáhněte a otevřete aplikaci <strong>Týden v Itálii</strong> ve vašem mobilu.</li>
-                <li>Na přihlašovací obrazovce zvolte možnost <strong>Naskenovat QR kód</strong>.</li>
-                <li>Namiřte fotoaparát na tento QR kód a budete okamžitě přihlášeni.</li>
-            </ol>
-            
-            <form action="" method="POST" style="margin: 0; padding: 0;">
-                <input type="hidden" name="action" value="regenerate_qr">
-                <button type="submit" class="btn btn-warning" onclick="return confirm('Pozor, po přegenerování se budete muset v mobilní aplikaci přihlásit znovu. Pokračovat?')">
-                    <i class="fa-solid fa-rotate"></i> Vygenerovat nový QR token
-                </button>
-            </form>
-        </div>
-    </div>
 </div>
 

@@ -699,25 +699,34 @@ class AdminController extends Controller
         $error = null;
         $alert = null;
 
-        // Add admin logic
+        // Handle POST requests
         if ($request->isPost()) {
             $params = $request->getParams();
-            $email = trim($params['email'] ?? '');
-            $password = $params['password'] ?? '';
+            $action = $params['action'] ?? 'add_admin';
 
-            if ($email === '' || $password === '') {
-                $error = 'Email i heslo jsou povinné.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $error = 'Zadejte platný email.';
+            if ($action === 'regenerate_qr') {
+                $adminId = (int)$_SESSION['admin_id'];
+                $token = bin2hex(random_bytes(16));
+                DB::query("UPDATE `admins` SET `qr_login_token` = ? WHERE `id` = ?", [$token, $adminId]);
+                $alert = ['type' => 'success', 'message' => 'Váš přihlašovací QR token byl úspěšně vygenerován znovu.'];
             } else {
-                // Check if exists
-                $check = DB::fetch("SELECT COUNT(*) as cnt FROM `admins` WHERE `email` = ?", [$email]);
-                if ($check && (int)$check['cnt'] > 0) {
-                    $error = 'Administrátor s tímto emailem již existuje.';
+                $email = trim($params['email'] ?? '');
+                $password = $params['password'] ?? '';
+
+                if ($email === '' || $password === '') {
+                    $error = 'Email i heslo jsou povinné.';
+                } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $error = 'Zadejte platný email.';
                 } else {
-                    $hash = password_hash($password, PASSWORD_BCRYPT);
-                    DB::query("INSERT INTO `admins` (`email`, `password`) VALUES (?, ?)", [$email, $hash]);
-                    $alert = ['type' => 'success', 'message' => 'Administrátor byl úspěšně vytvořen.'];
+                    // Check if exists
+                    $check = DB::fetch("SELECT COUNT(*) as cnt FROM `admins` WHERE `email` = ?", [$email]);
+                    if ($check && (int)$check['cnt'] > 0) {
+                        $error = 'Administrátor s tímto emailem již existuje.';
+                    } else {
+                        $hash = password_hash($password, PASSWORD_BCRYPT);
+                        DB::query("INSERT INTO `admins` (`email`, `password`) VALUES (?, ?)", [$email, $hash]);
+                        $alert = ['type' => 'success', 'message' => 'Administrátor byl úspěšně vytvořen.'];
+                    }
                 }
             }
         }
@@ -735,6 +744,14 @@ class AdminController extends Controller
         }
 
         $adminsList = DB::fetchAll("SELECT * FROM `admins` ORDER BY `created_at` DESC");
+
+        foreach ($adminsList as &$ad) {
+            if (empty($ad['qr_login_token'])) {
+                $token = bin2hex(random_bytes(16));
+                DB::query("UPDATE `admins` SET `qr_login_token` = ? WHERE `id` = ?", [$token, $ad['id']]);
+                $ad['qr_login_token'] = $token;
+            }
+        }
 
         $this->render('admin/admins-list', [
             'title'      => 'Správa administrátorů',
