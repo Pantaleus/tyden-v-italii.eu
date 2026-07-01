@@ -397,6 +397,42 @@ class AdminController extends Controller
     }
 
     /**
+     * Reorder Timeline Steps via AJAX
+     */
+    public function reorderTimeline(Request $request): void
+    {
+        $this->checkAuth();
+
+        $params = $request->getParams();
+        $order = $params['order'] ?? [];
+
+        if (!is_array($order) || empty($order)) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid order data']);
+            exit;
+        }
+
+        try {
+            foreach ($order as $index => $stepId) {
+                $stepOrder = $index + 1;
+                DB::query(
+                    "UPDATE `timeline_steps` SET `step_order` = ? WHERE `id` = ?",
+                    [$stepOrder, (int)$stepId]
+                );
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success']);
+            exit;
+        } catch (\Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
      * Delete Trip
      */
     public function deleteTrip(Request $request): void

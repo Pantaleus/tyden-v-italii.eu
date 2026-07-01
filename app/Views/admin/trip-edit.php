@@ -170,41 +170,52 @@
         </form>
 
         <!-- Current Steps List -->
-        <h4 style="font-size: 15px; margin-bottom: 15px;"><i class="fa-solid fa-list-ol"></i> Aktuální kroky na ose</h4>
+        <h4 style="font-size: 15px; margin-bottom: 15px;"><i class="fa-solid fa-list-ol"></i> Aktuální kroky na ose (Chyťte a přetáhněte pro změnu pořadí)</h4>
 
         <?php if (empty($steps)): ?>
             <p style="color: var(--text-muted); font-style: italic;">Časová osa nemá žádné kroky.</p>
         <?php else: ?>
-            <?php foreach ($steps as $st): ?>
-                <div class="timeline-builder-item">
-                    <!-- Delete Step Button -->
-                    <form action="" method="POST" style="display: inline;" onsubmit="return confirm('Smazat tento krok?')">
-                        <input type="hidden" name="action" value="delete_step">
-                        <input type="hidden" name="step_id" value="<?= $st['id'] ?>">
-                        <button type="submit" class="remove-step-btn" title="Smazat"><i class="fa-regular fa-trash-can"></i></button>
-                    </form>
+            <div id="timeline-steps-list">
+                <?php foreach ($steps as $st): ?>
+                    <div class="timeline-builder-item" draggable="true" data-id="<?= $st['id'] ?>" data-transport="<?= htmlspecialchars($st['transport_type']) ?>" style="cursor: grab; user-select: none;">
+                        <!-- Delete Step Button -->
+                        <form action="" method="POST" style="display: inline;" onsubmit="return confirm('Smazat tento krok?')">
+                            <input type="hidden" name="action" value="delete_step">
+                            <input type="hidden" name="step_id" value="<?= $st['id'] ?>">
+                            <button type="submit" class="remove-step-btn" title="Smazat"><i class="fa-regular fa-trash-can"></i></button>
+                        </form>
 
-                    <div style="font-weight: 700; font-size: 14px; color: var(--primary-color);">
-                        Krok #<?= htmlspecialchars((string)$st['step_order']) ?> - <?= htmlspecialchars($st['transport_type']) ?>
-                    </div>
-                    <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
-                        <?= htmlspecialchars($st['trans']['cs']['title'] ?? 'Bez názvu') ?> 
-                        <?php if ($st['departure_time'] || $st['arrival_time']): ?>
-                            <span style="color: var(--text-muted); font-size: 13px;">
-                                (<?= htmlspecialchars((string)$st['departure_time']) ?> &rarr; <?= htmlspecialchars((string)$st['arrival_time']) ?>)
-                            </span>
+                        <div class="step-order-number" style="font-weight: 700; font-size: 14px; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-grip-vertical" style="color: var(--text-muted); cursor: grab; font-size: 16px;"></i>
+                            <span>Krok #<?= htmlspecialchars((string)$st['step_order']) ?> - <?= htmlspecialchars($st['transport_type']) ?></span>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; margin-top: 4px; padding-left: 24px;">
+                            <?= htmlspecialchars($st['trans']['cs']['title'] ?? 'Bez názvu') ?> 
+                            <?php if ($st['departure_time'] || $st['arrival_time']): ?>
+                                <span style="color: var(--text-muted); font-size: 13px;">
+                                    (<?= htmlspecialchars((string)$st['departure_time']) ?> &rarr; <?= htmlspecialchars((string)$st['arrival_time']) ?>)
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (isset($st['trans']['cs']['text']) && $st['trans']['cs']['text']): ?>
+                            <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px; padding-left: 24px;">
+                                <?= htmlspecialchars($st['trans']['cs']['text']) ?>
+                            </div>
                         <?php endif; ?>
                     </div>
-                    <?php if (isset($st['trans']['cs']['text']) && $st['trans']['cs']['text']): ?>
-                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-                            <?= htmlspecialchars($st['trans']['cs']['text']) ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
     </div>
 </div>
+
+<style>
+    .timeline-builder-item.dragging {
+        opacity: 0.4;
+        border: 2px dashed var(--primary-color);
+        background-color: var(--bg-color);
+    }
+</style>
 
 <script>
     function switchLangTab(evt, tabId) {
@@ -217,4 +228,95 @@
         document.getElementById(tabId).classList.add('active');
         evt.currentTarget.classList.add('active');
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const list = document.getElementById('timeline-steps-list');
+        if (!list) return;
+
+        let draggedItem = null;
+
+        list.querySelectorAll('.timeline-builder-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                draggedItem = item;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                draggedItem = null;
+                saveNewOrder();
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const bounding = item.getBoundingClientRect();
+                const offset = bounding.y + (bounding.height / 2);
+                if (e.clientY - offset < 0) {
+                    list.insertBefore(draggedItem, item);
+                } else {
+                    list.insertBefore(draggedItem, item.nextSibling);
+                }
+            });
+        });
+
+        async function saveNewOrder() {
+            const items = list.querySelectorAll('.timeline-builder-item');
+            const order = Array.from(items).map(item => item.getAttribute('data-id'));
+
+            // Update numbering visually
+            items.forEach((item, index) => {
+                const stepNumText = item.querySelector('.step-order-number span');
+                if (stepNumText) {
+                    const transportType = item.getAttribute('data-transport');
+                    stepNumText.textContent = `Krok #${index + 1} - ${transportType}`;
+                }
+            });
+
+            try {
+                const response = await fetch('/admin/trips/timeline/reorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ order })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast('Pořadí kroků na časové ose bylo uloženo.');
+                } else {
+                    alert('Chyba při ukládání pořadí: ' + (result.message || 'Neznámá chyba'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Nepodařilo se uložit pořadí (zkontrolujte připojení).');
+            }
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('drag-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'drag-toast';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.backgroundColor = '#10B981';
+                toast.style.color = '#FFFFFF';
+                toast.style.padding = '12px 24px';
+                toast.style.borderRadius = '8px';
+                toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                toast.style.fontSize = '14px';
+                toast.style.fontWeight = 'bold';
+                toast.style.zIndex = '9999';
+                toast.style.transition = 'opacity 0.3s ease';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2000);
+        }
+    });
 </script>

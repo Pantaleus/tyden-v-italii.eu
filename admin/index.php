@@ -53,6 +53,7 @@ $router->get('/admin/trips/add', [AdminController::class, 'addTrip']);
 $router->post('/admin/trips/add', [AdminController::class, 'addTrip']);
 $router->get('/admin/trips/edit/{id}', [AdminController::class, 'editTrip']);
 $router->post('/admin/trips/edit/{id}', [AdminController::class, 'editTrip']);
+$router->post('/admin/trips/timeline/reorder', [AdminController::class, 'reorderTimeline']);
 $router->get('/admin/trips/delete/{id}', [AdminController::class, 'deleteTrip']);
 
 // Blog Posts Section
